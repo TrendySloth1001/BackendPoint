@@ -8,6 +8,7 @@ const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
+const path = require('path');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 
@@ -31,6 +32,8 @@ const adminRoutes = require('./routes/admin');
 
 
 const app = express();
+// Trust the first proxy hop (dev tunnel / reverse proxy)
+app.set('trust proxy', 1);
 const server = createServer(app);
 
 // WebSocket setup
@@ -44,8 +47,14 @@ const io = new Server(server, {
 // Connect to database
 connectDB();
 
-// Security middleware
-app.use(helmet());
+// Serve static assets (for simple verification landing pages, etc.)
+app.use(express.static('public', { etag: false, lastModified: false, cacheControl: false, maxAge: 0 }));
+
+// Security middleware (allow inline scripts for verification page)
+app.use(helmet({
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' }
+}));
 app.use(cors({
   origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
   credentials: true
@@ -108,6 +117,16 @@ app.use(`${apiPrefix}/mod`, moderationRoutes);
 app.use(`${apiPrefix}/notifications`, notificationRoutes);
 app.use(`${apiPrefix}/admin`, adminRoutes);
 
+// Convenience redirect for email verification links to an HTML landing page
+app.get('/verify-email', (req, res) => {
+  res.set({
+    'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  });
+  return res.sendFile(path.resolve(__dirname, '..', 'public', 'verify-email.html'));
+});
+
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({
@@ -127,9 +146,10 @@ process.on('SIGTERM', () => {
   logger.info('SIGTERM received, shutting down gracefully');
   server.close(() => {
     logger.info('Process terminated');
-    mongoose.connection.close(false, () => {
-      process.exit(0);
-    });
+    mongoose.connection
+      .close(false)
+      .then(() => process.exit(0))
+      .catch(() => process.exit(1));
   });
 });
 
@@ -137,9 +157,10 @@ process.on('SIGINT', () => {
   logger.info('SIGINT received, shutting down gracefully');
   server.close(() => {
     logger.info('Process terminated');
-    mongoose.connection.close(false, () => {
-      process.exit(0);
-    });
+    mongoose.connection
+      .close(false)
+      .then(() => process.exit(0))
+      .catch(() => process.exit(1));
   });
 });
 

@@ -10,6 +10,7 @@ class ApiClient {
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 30),
       receiveTimeout: const Duration(seconds: 30),
+      validateStatus: (status) => status != null && status < 500,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -18,38 +19,39 @@ class ApiClient {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // Add auth token if available
         final prefs = await SharedPreferences.getInstance();
         final token = prefs.getString('access_token');
-        if (token != null) {
+
+        if (token != null && token.isNotEmpty) {
           options.headers['Authorization'] = 'Bearer $token';
         }
+
         handler.next(options);
       },
       onError: (error, handler) async {
         if (error.response?.statusCode == 401) {
-          // Token expired, try to refresh
           final prefs = await SharedPreferences.getInstance();
           final refreshToken = prefs.getString('refresh_token');
           
-          if (refreshToken != null) {
+          if (refreshToken != null && refreshToken.isNotEmpty) {
             try {
               final response = await _dio.post('/auth/refresh', data: {
                 'refreshToken': refreshToken,
               });
-              
+
               if (response.statusCode == 200) {
                 final newToken = response.data['data']['tokens']['accessToken'];
                 await prefs.setString('access_token', newToken);
-                
-                // Retry the original request
-                error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-                final retryResponse = await _dio.fetch(error.requestOptions);
+
+                // Retry with new token
+                final reqOptions = error.requestOptions;
+                reqOptions.headers['Authorization'] = 'Bearer $newToken';
+
+                final retryResponse = await _dio.fetch(reqOptions);
                 handler.resolve(retryResponse);
                 return;
               }
-            } catch (e) {
-              // Refresh failed, clear tokens
+            } catch (_) {
               await prefs.remove('access_token');
               await prefs.remove('refresh_token');
             }
@@ -62,7 +64,6 @@ class ApiClient {
 
   Dio get dio => _dio;
 
-  // Helper methods for common HTTP operations
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) {
     return _dio.get(path, queryParameters: queryParameters);
   }

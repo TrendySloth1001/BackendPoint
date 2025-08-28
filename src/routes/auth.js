@@ -2,6 +2,7 @@ const express = require('express');
 const rateLimit = require('express-rate-limit');
 const { body, validationResult } = require('express-validator');
 const { asyncHandler } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 const { authenticateToken, authenticateRefreshToken } = require('../middleware/auth');
 const { RATE_LIMITS } = require('../utils/constants');
 const {
@@ -41,6 +42,17 @@ const forgotPasswordLimiter = rateLimit({
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    // Log a concise validation error with masked sensitive fields
+    const safeBody = { ...req.body };
+    if (typeof safeBody.password === 'string') safeBody.password = '***';
+    if (typeof safeBody.newPassword === 'string') safeBody.newPassword = '***';
+    logger.warn('Request validation failed', {
+      url: req.originalUrl,
+      method: req.method,
+      body: safeBody,
+      errors: errors.array()
+    });
+
     return res.status(400).json({
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
@@ -168,6 +180,25 @@ router.post('/reset', resetPasswordValidation, validate, asyncHandler(resetPassw
  * @access  Public
  */
 router.post('/verify-email', verifyEmailValidation, validate, asyncHandler(verifyEmail));
+
+/**
+ * @route   GET /api/v1/auth/verify-email?token=...
+ * @desc    Verify email via link (convenience for emails)
+ * @access  Public
+ */
+router.get('/verify-email', asyncHandler(async (req, res, next) => {
+  const { token } = req.query;
+  if (!token || typeof token !== 'string') {
+    return res.status(400).json({
+      code: 'VALIDATION_ERROR',
+      message: 'Verification token is required'
+    });
+  }
+
+  // Reuse POST controller by injecting token into body
+  req.body.token = token;
+  return verifyEmail(req, res, next);
+}));
 
 /**
  * @route   POST /api/v1/auth/resend-verification

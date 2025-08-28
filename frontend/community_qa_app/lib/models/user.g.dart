@@ -15,8 +15,8 @@ User _$UserFromJson(Map<String, dynamic> json) => User(
       avatar: json['avatar'] as String?,
       website: json['website'] as String?,
       location: json['location'] as String?,
-      isEmailVerified: json['isEmailVerified'] as bool,
-      isActive: json['isActive'] as bool,
+      isEmailVerified: json['isEmailVerified'] as bool? ?? false,
+      isActive: json['isActive'] as bool? ?? false,
       reputation: (json['reputation'] as num).toInt(),
       role: json['role'] as String,
       permissions: (json['permissions'] as List<dynamic>?)
@@ -113,10 +113,10 @@ Map<String, dynamic> _$BadgeToJson(Badge instance) => <String, dynamic>{
 
 UserPreferences _$UserPreferencesFromJson(Map<String, dynamic> json) =>
     UserPreferences(
-      emailNotifications: json['emailNotifications'] as bool,
-      pushNotifications: json['pushNotifications'] as bool,
-      publicProfile: json['publicProfile'] as bool,
-      showEmail: json['showEmail'] as bool,
+      emailNotifications: json['emailNotifications'] as bool? ?? false,
+      pushNotifications: json['pushNotifications'] as bool? ?? false,
+      publicProfile: json['publicProfile'] as bool? ?? false,
+      showEmail: json['showEmail'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$UserPreferencesToJson(UserPreferences instance) =>

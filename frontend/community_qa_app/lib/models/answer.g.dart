@@ -18,12 +18,12 @@ Answer _$AnswerFromJson(Map<String, dynamic> json) => Answer(
       downvoteCount: (json['downvoteCount'] as num).toInt(),
       commentCount: (json['commentCount'] as num).toInt(),
       score: (json['score'] as num).toInt(),
-      isAccepted: json['isAccepted'] as bool,
+      isAccepted: json['isAccepted'] as bool? ?? false,
       acceptedAt: json['acceptedAt'] == null
           ? null
           : DateTime.parse(json['acceptedAt'] as String),
       acceptedBy: json['acceptedBy'] as String?,
-      isLocked: json['isLocked'] as bool,
+      isLocked: json['isLocked'] as bool? ?? false,
       moderationNotes: json['moderationNotes'] as String?,
       deletedAt: json['deletedAt'] == null
           ? null

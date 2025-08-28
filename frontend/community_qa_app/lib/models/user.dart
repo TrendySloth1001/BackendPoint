@@ -12,7 +12,9 @@ class User {
   final String? avatar;
   final String? website;
   final String? location;
+  @JsonKey(defaultValue: false)
   final bool isEmailVerified;
+  @JsonKey(defaultValue: false)
   final bool isActive;
   final int reputation;
   final String role;
@@ -164,9 +166,13 @@ class Badge {
 
 @JsonSerializable()
 class UserPreferences {
+  @JsonKey(defaultValue: false)
   final bool emailNotifications;
+  @JsonKey(defaultValue: false)
   final bool pushNotifications;
+  @JsonKey(defaultValue: false)
   final bool publicProfile;
+  @JsonKey(defaultValue: false)
   final bool showEmail;
 
   UserPreferences({

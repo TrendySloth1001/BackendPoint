@@ -235,10 +235,24 @@ const logout = async (req, res, next) => {
  */
 const getMe = async (req, res, next) => {
   try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required'
+      });
+    }
+
     const user = await User.findById(req.user._id)
       .populate('spaces.space', 'name slug icon')
       .populate('following', 'displayName username avatar reputation')
       .populate('followers', 'displayName username avatar reputation');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid or expired token'
+      });
+    }
 
     res.json({
       success: true,
@@ -376,7 +390,13 @@ const verifyEmail = async (req, res, next) => {
     });
 
     if (!user) {
-      throw new AppError('Invalid or expired verification token', 400, ERROR_CODES.VALIDATION_ERROR);
+      // Make verification idempotent for UX: if token is invalid/expired,
+      // respond with a benign success to handle re-clicks on already-used links.
+      return res.status(200).json({
+        success: true,
+        message: 'Email is already verified or the link has expired.',
+        data: { user: null }
+      });
     }
 
     // Verify email
@@ -389,7 +409,16 @@ const verifyEmail = async (req, res, next) => {
 
     res.json({
       success: true,
-      message: 'Email verified successfully'
+      message: 'Email verified successfully',
+      data: {
+        user: {
+          id: user._id,
+          email: user.email,
+          displayName: user.displayName,
+          username: user.username,
+          isEmailVerified: user.isEmailVerified
+        }
+      }
     });
   } catch (error) {
     next(error);

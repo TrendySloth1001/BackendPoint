@@ -13,6 +13,7 @@ class Post {
   final String author;
   final String space;
   final List<String>? tags;
+  @JsonKey(defaultValue: false)
   final bool isAnswered;
   final String? acceptedAnswer;
   final PostBounty? bounty;
@@ -24,8 +25,11 @@ class Post {
   final int downvoteCount;
   final int score;
   final double hotScore;
+  @JsonKey(defaultValue: false)
   final bool isLocked;
+  @JsonKey(defaultValue: false)
   final bool isPinned;
+  @JsonKey(defaultValue: false)
   final bool isFeatured;
   final String? moderationNotes;
   final DateTime? deletedAt;

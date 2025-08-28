@@ -12,11 +12,17 @@ class Space {
   final String? icon;
   final String? banner;
   final String color;
+  @JsonKey(defaultValue: false)
   final bool isPublic;
+  @JsonKey(defaultValue: false)
   final bool isActive;
+  @JsonKey(defaultValue: false)
   final bool allowQuestions;
+  @JsonKey(defaultValue: false)
   final bool allowDiscussions;
+  @JsonKey(defaultValue: false)
   final bool requireApproval;
+  @JsonKey(defaultValue: false)
   final bool allowAnonymous;
   final int memberCount;
   final int postCount;

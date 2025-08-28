@@ -15,9 +15,11 @@ class Answer {
   final int downvoteCount;
   final int commentCount;
   final int score;
+  @JsonKey(defaultValue: false)
   final bool isAccepted;
   final DateTime? acceptedAt;
   final String? acceptedBy;
+  @JsonKey(defaultValue: false)
   final bool isLocked;
   final String? moderationNotes;
   final DateTime? deletedAt;

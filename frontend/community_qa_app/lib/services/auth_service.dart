@@ -22,25 +22,30 @@ class AuthService {
         'username': username,
       });
 
-      if (response.statusCode == 201) {
-        final data = response.data['data'];
-        final tokens = data['tokens'];
+      final ok = (response.statusCode ?? 500) < 400;
+      if (ok) {
+        final root = (response.data is Map) ? response.data as Map : const {};
+        final data = (root['data'] is Map) ? root['data'] as Map : const {};
+        final tokens = (data['tokens'] is Map) ? data['tokens'] as Map : const {};
         
         // Store tokens
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', tokens['accessToken']);
         await prefs.setString('refresh_token', tokens['refreshToken']);
         
+        final userMapDyn = (data['user'] is Map) ? data['user'] as Map : const {};
+        final userMap = Map<String, dynamic>.from(userMapDyn);
         return {
           'success': true,
-          'user': User.fromJson(data['user']),
+          'user': User.fromJson(userMap),
           'message': response.data['message'],
         };
       }
       
+      final root = (response.data is Map) ? response.data as Map : const {};
       return {
         'success': false,
-        'message': response.data['message'] ?? 'Sign up failed',
+        'message': (root['message'] is String) ? root['message'] as String : 'Sign up failed',
       };
     } catch (e) {
       return {
@@ -61,25 +66,30 @@ class AuthService {
         'password': password,
       });
 
-      if (response.statusCode == 200) {
-        final data = response.data['data'];
-        final tokens = data['tokens'];
+      final ok = (response.statusCode ?? 500) < 400;
+      if (ok) {
+        final root = (response.data is Map) ? response.data as Map : const {};
+        final data = (root['data'] is Map) ? root['data'] as Map : const {};
+        final tokens = (data['tokens'] is Map) ? data['tokens'] as Map : const {};
         
         // Store tokens
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('access_token', tokens['accessToken']);
         await prefs.setString('refresh_token', tokens['refreshToken']);
         
+        final userMapDyn = (data['user'] is Map) ? data['user'] as Map : const {};
+        final userMap = Map<String, dynamic>.from(userMapDyn);
         return {
           'success': true,
-          'user': User.fromJson(data['user']),
+          'user': User.fromJson(userMap),
           'message': response.data['message'],
         };
       }
       
+      final root = (response.data is Map) ? response.data as Map : const {};
       return {
         'success': false,
-        'message': response.data['message'] ?? 'Login failed',
+        'message': (root['message'] is String) ? root['message'] as String : 'Login failed',
       };
     } catch (e) {
       return {
@@ -92,12 +102,26 @@ class AuthService {
   // Get current user
   Future<Map<String, dynamic>> getCurrentUser() async {
     try {
+      // Short-circuit if no token saved yet
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('access_token');
+      if (token == null || token.isEmpty) {
+        return {
+          'success': false,
+          'message': 'Not authenticated',
+        };
+      }
+
       final response = await _apiClient.get('/auth/me');
 
-      if (response.statusCode == 200) {
+      final ok = (response.statusCode ?? 500) < 400;
+      if (ok) {
+        final root = (response.data is Map) ? response.data as Map : const {};
+        final data = (root['data'] is Map) ? root['data'] as Map : const {};
+        final userMap = (data['user'] is Map) ? data['user'] as Map : const {};
         return {
           'success': true,
-          'user': User.fromJson(response.data['data']['user']),
+          'user': User.fromJson(Map<String, dynamic>.from(userMap)),
         };
       }
       
@@ -133,10 +157,12 @@ class AuthService {
       final response = await _apiClient.post('/auth/forgot', data: {
         'email': email,
       });
-
+      final ok = (response.statusCode ?? 500) < 400;
+      final root = (response.data is Map) ? response.data as Map : const {};
+      final msg = (root['message'] is String) ? root['message'] as String : (ok ? 'OK' : 'Request failed');
       return {
-        'success': response.statusCode == 200,
-        'message': response.data['message'],
+        'success': ok,
+        'message': msg,
       };
     } catch (e) {
       return {
@@ -157,9 +183,12 @@ class AuthService {
         'newPassword': newPassword,
       });
 
+      final ok = (response.statusCode ?? 500) < 400;
+      final root = (response.data is Map) ? response.data as Map : const {};
+      final msg = (root['message'] is String) ? root['message'] as String : (ok ? 'OK' : 'Request failed');
       return {
-        'success': response.statusCode == 200,
-        'message': response.data['message'],
+        'success': ok,
+        'message': msg,
       };
     } catch (e) {
       return {
@@ -176,9 +205,12 @@ class AuthService {
         'token': token,
       });
 
+      final ok = (response.statusCode ?? 500) < 400;
+      final root = (response.data is Map) ? response.data as Map : const {};
+      final msg = (root['message'] is String) ? root['message'] as String : (ok ? 'OK' : 'Request failed');
       return {
-        'success': response.statusCode == 200,
-        'message': response.data['message'],
+        'success': ok,
+        'message': msg,
       };
     } catch (e) {
       return {
@@ -195,9 +227,12 @@ class AuthService {
         'email': email,
       });
 
+      final ok = (response.statusCode ?? 500) < 400;
+      final root = (response.data is Map) ? response.data as Map : const {};
+      final msg = (root['message'] is String) ? root['message'] as String : (ok ? 'OK' : 'Request failed');
       return {
-        'success': response.statusCode == 200,
-        'message': response.data['message'],
+        'success': ok,
+        'message': msg,
       };
     } catch (e) {
       return {
@@ -211,7 +246,7 @@ class AuthService {
   Future<bool> isLoggedIn() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('access_token');
-    return token != null;
+    return token != null && token.isNotEmpty;
   }
 
   // Get stored tokens

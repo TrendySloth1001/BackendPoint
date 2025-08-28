@@ -16,7 +16,7 @@ Post _$PostFromJson(Map<String, dynamic> json) => Post(
       author: json['author'] as String,
       space: json['space'] as String,
       tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-      isAnswered: json['isAnswered'] as bool,
+      isAnswered: json['isAnswered'] as bool? ?? false,
       acceptedAnswer: json['acceptedAnswer'] as String?,
       bounty: json['bounty'] == null
           ? null
@@ -29,9 +29,9 @@ Post _$PostFromJson(Map<String, dynamic> json) => Post(
       downvoteCount: (json['downvoteCount'] as num).toInt(),
       score: (json['score'] as num).toInt(),
       hotScore: (json['hotScore'] as num).toDouble(),
-      isLocked: json['isLocked'] as bool,
-      isPinned: json['isPinned'] as bool,
-      isFeatured: json['isFeatured'] as bool,
+      isLocked: json['isLocked'] as bool? ?? false,
+      isPinned: json['isPinned'] as bool? ?? false,
+      isFeatured: json['isFeatured'] as bool? ?? false,
       moderationNotes: json['moderationNotes'] as String?,
       deletedAt: json['deletedAt'] == null
           ? null
